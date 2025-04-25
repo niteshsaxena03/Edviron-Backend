@@ -11,17 +11,14 @@ const generateSign = (payload) => {
 
 const createPaymentRequest = async (school_id, amount, callback_url) => {
   try {
-    // Convert amount to string as required by the API
     const amountString = amount.toString();
 
-    // Create JWT payload for signing
     const payload = {
       school_id,
       amount: amountString,
       callback_url,
     };
 
-    // Sign the payload with PG key using the helper function
     const sign = generateSign(payload);
 
     const data = {
@@ -50,7 +47,6 @@ const createPaymentRequest = async (school_id, amount, callback_url) => {
 
     console.log("Payment gateway response data:", response.data);
 
-    // Create response object with the expected fields, with fallbacks
     const standardizedResponse = {
       collect_request_id:
         response.data?.collect_request_id || "mock-id-" + Date.now(),
@@ -70,7 +66,6 @@ const createPaymentRequest = async (school_id, amount, callback_url) => {
       stack: error.stack,
     });
 
-    // Create a fallback response
     console.log("Error in payment request, creating fallback response");
     return {
       collect_request_id: "fallback-id-" + Date.now(),
@@ -82,13 +77,11 @@ const createPaymentRequest = async (school_id, amount, callback_url) => {
 
 const checkPaymentStatus = async (school_id, collect_request_id) => {
   try {
-    // Create JWT payload for signing
     const payload = {
       school_id,
       collect_request_id,
     };
 
-    // Sign the payload with PG key using the helper function
     const sign = generateSign(payload);
 
     const headers = {
@@ -109,7 +102,6 @@ const checkPaymentStatus = async (school_id, collect_request_id) => {
       message: error.message,
     });
 
-    // Return a fallback response
     return {
       status: "PENDING",
       amount: 0,

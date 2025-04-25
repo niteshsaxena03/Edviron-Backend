@@ -34,10 +34,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     await newUser.save();
 
-    // Generate JWT token
     const token = generateToken(newUser._id, newUser.role);
 
-    // Return success response with token
     const response = new ApiResponse(201, "User registered successfully", {
       user: {
         _id: newUser._id,
@@ -59,27 +57,22 @@ const loginUser = asyncHandler(async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
       return next(new ApiError(400, "Please provide email and password"));
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return next(new ApiError(401, "Invalid email or password"));
     }
 
-    // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return next(new ApiError(401, "Invalid email or password"));
     }
 
-    // Generate JWT token
     const token = generateToken(user._id, user.role);
 
-    // Return success response with token
     const response = new ApiResponse(200, "User logged in successfully", {
       user: {
         _id: user._id,

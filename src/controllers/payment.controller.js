@@ -92,7 +92,7 @@ const createPayment = asyncHandler(async (req, res) => {
   }
 });
 
-// Check Payment Status Controller
+
 const checkStatus = asyncHandler(async (req, res) => {
   const { collect_request_id } = req.params;
   const { school_id } = req.query;

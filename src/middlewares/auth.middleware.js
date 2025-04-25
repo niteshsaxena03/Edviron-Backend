@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import ApiError from "../utils/ApiError.utils.js";
 import asyncHandler from "../utils/AsyncHandler.utils.js";
 
-// Protect routes - authenticate user
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 

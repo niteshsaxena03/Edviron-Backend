@@ -112,12 +112,10 @@ const getTransactionsBySchool = asyncHandler(async (req, res) => {
   try {
     const { schoolId } = req.params;
 
-    // Extract query parameters for pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Handle sorting
     const sortField = req.query.sort || "createdAt";
     const sortOrder = req.query.order === "asc" ? 1 : -1;
     const sortOptions = {};
