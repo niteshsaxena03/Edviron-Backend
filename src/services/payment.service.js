@@ -5,8 +5,9 @@ import ApiError from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import asyncHandler from "../utils/AsyncHandler.utils.js";
 
+// Helper function to generate JWT signatures
 const generateSign = (payload) => {
-  return jwt.sign(payload, process.env.pg_key, { algorithm: "HS256" }); // Add algorithm
+  return jwt.sign(payload, process.env.pg_key, { algorithm: "HS256" });
 };
 
 const createPaymentRequest = async (school_id, amount, callback_url) => {
@@ -21,8 +22,8 @@ const createPaymentRequest = async (school_id, amount, callback_url) => {
       callback_url,
     };
 
-    // Sign the payload with PG key
-    const sign = jwt.sign(payload, process.env.pg_key);
+    // Sign the payload with PG key using the helper function
+    const sign = generateSign(payload);
 
     const data = {
       school_id,
@@ -41,15 +42,6 @@ const createPaymentRequest = async (school_id, amount, callback_url) => {
       data,
       headers: { ...headers, Authorization: "Bearer [REDACTED]" },
     });
-
-    // For testing, uncomment to use a mock response instead of real API call
-    /*
-    return {
-      collect_request_id: "mock-id-" + Date.now(),
-      collect_request_url: "https://example.com/payment",
-      sign: sign
-    };
-    */
 
     const response = await axios.post(
       "https://dev-vanilla.edviron.com/erp/create-collect-request",
@@ -97,8 +89,8 @@ const checkPaymentStatus = async (school_id, collect_request_id) => {
       collect_request_id,
     };
 
-    // Sign the payload with PG key
-    const sign = jwt.sign(payload, process.env.pg_key);
+    // Sign the payload with PG key using the helper function
+    const sign = generateSign(payload);
 
     const headers = {
       "Content-Type": "application/json",
