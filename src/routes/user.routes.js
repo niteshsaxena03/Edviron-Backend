@@ -7,8 +7,7 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 
-// Protected route (requires authentication)
-router.get("/profile", protect, (req, res) => {
+router.get("/home", protect, (req, res) => {
   res.status(200).json({
     message: "User profile",
     user: req.user,
