@@ -10,7 +10,6 @@ import asyncHandler from "../utils/AsyncHandler.utils.js";
 import ApiError from "../utils/ApiError.utils.js";
 import mongoose from "mongoose";
 
-// Create Payment Controller
 const createPayment = asyncHandler(async (req, res) => {
   console.log("Payment request received:", req.body);
   const {
@@ -22,7 +21,6 @@ const createPayment = asyncHandler(async (req, res) => {
     gateway_name = "Edviron",
   } = req.body;
 
-  // Validate if the required fields are provided
   if (!school_id || !amount || !callback_url) {
     console.log("Missing required fields");
     return res
@@ -37,10 +35,9 @@ const createPayment = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Create an order in the database
     const order = new Order({
       school_id,
-      trustee_id: trustee_id || "65b0e552dd31950a9b41c5ba", // Default from the instructions
+      trustee_id: trustee_id || "65b0e552dd31950a9b41c5ba",
       student_info: student_info || {
         name: "Student",
         id: "STD" + Date.now(),
@@ -49,11 +46,9 @@ const createPayment = asyncHandler(async (req, res) => {
       gateway_name: gateway_name,
     });
 
-    // Save the order
     const savedOrder = await order.save();
     console.log("Order created:", savedOrder._id);
 
-    // Call service function to create payment request
     const paymentResponse = await createPaymentRequest(
       school_id,
       amount,
@@ -62,27 +57,23 @@ const createPayment = asyncHandler(async (req, res) => {
 
     console.log("Payment gateway response in controller:", paymentResponse);
 
-    // Create an order status entry
     const orderStatus = new OrderStatus({
       collect_id: savedOrder._id,
       order_amount: amount,
-      transaction_amount: amount, // Same as order amount initially
+      transaction_amount: amount, 
       payment_mode: "Not initiated",
       status: "NOT INITIATED",
       payment_time: new Date(),
     });
 
-    // Save the order status
     const savedOrderStatus = await orderStatus.save();
     console.log("Order status created:", savedOrderStatus._id);
 
-    // Option 1: Redirect the user directly to the payment page
     if (req.query.redirect === "true" && paymentResponse.collect_request_url) {
       console.log("Redirecting to:", paymentResponse.collect_request_url);
       return res.redirect(paymentResponse.collect_request_url);
     }
 
-    // Option 2: Return the payment data as JSON
     console.log("Sending JSON response");
     return res.status(200).json(
       new ApiResponse(200, "Payment request created successfully", {
@@ -106,7 +97,6 @@ const checkStatus = asyncHandler(async (req, res) => {
   const { collect_request_id } = req.params;
   const { school_id } = req.query;
 
-  // Validate if the required fields are provided
   if (!collect_request_id || !school_id) {
     return res
       .status(400)
@@ -120,14 +110,11 @@ const checkStatus = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Call service function to check payment status
     const paymentStatus = await checkPaymentStatus(
       school_id,
       collect_request_id
     );
 
-    // Try to find the order status in the database
-    // Check if collect_request_id is a valid MongoDB ObjectId
     let orderStatus = null;
     if (mongoose.Types.ObjectId.isValid(collect_request_id)) {
       orderStatus = await OrderStatus.findOne({
@@ -138,13 +125,11 @@ const checkStatus = asyncHandler(async (req, res) => {
       });
     }
 
-    // Combine payment gateway status with database status
     const statusResponse = {
       gateway_status: paymentStatus,
       db_status: orderStatus,
     };
 
-    // Send successful response with status data
     return res
       .status(200)
       .json(
@@ -168,11 +153,10 @@ const checkStatus = asyncHandler(async (req, res) => {
   }
 });
 
-// Handle Callback Controller (Webhook)
+
 const handleCallback = asyncHandler(async (req, res) => {
   const { payment_status, collect_request_id, payment_details } = req.body;
 
-  // Validate the required callback data
   if (!payment_status || !collect_request_id) {
     return res
       .status(400)
@@ -180,7 +164,6 @@ const handleCallback = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Log webhook event
     const webhook = new Webhook({
       event_type: "payment_callback",
       payload: req.body,
@@ -190,7 +173,6 @@ const handleCallback = asyncHandler(async (req, res) => {
     });
     await webhook.save();
 
-    // Try to find the order status in the database
     let orderStatus = null;
     if (mongoose.Types.ObjectId.isValid(collect_request_id)) {
       orderStatus = await OrderStatus.findOne({
@@ -198,7 +180,6 @@ const handleCallback = asyncHandler(async (req, res) => {
       });
 
       if (orderStatus) {
-        // Update the order status
         orderStatus.status = payment_status;
         orderStatus.payment_details = payment_details || "No details provided";
         orderStatus.payment_time = new Date();
@@ -223,7 +204,6 @@ const handleCallback = asyncHandler(async (req, res) => {
       }
     }
 
-    // Handle the callback response based on payment status
     if (payment_status === "SUCCESS") {
       console.log(
         `Payment successful for collect_request_id: ${collect_request_id}`
@@ -234,7 +214,6 @@ const handleCallback = asyncHandler(async (req, res) => {
       );
     }
 
-    // Send success response to acknowledge callback receipt
     return res.status(200).json(
       new ApiResponse(200, "Payment status received successfully", {
         updated: !!orderStatus,
@@ -243,7 +222,6 @@ const handleCallback = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error("Error processing payment callback:", error);
 
-    // Log webhook error
     try {
       const webhook = new Webhook({
         event_type: "payment_callback",

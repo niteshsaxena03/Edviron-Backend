@@ -111,7 +111,7 @@ for managing Transactions and Payments.
 1. Check Transaction Status
    ● GET /transaction-status/:custom_order_id
    ● Returns the current status of the transaction.
-   
+
    ✅ Additional Notes
    ● Data Validation & Error Handling
    Ensure proper validation of all incoming data using validation libraries (e.g., class-validator for
@@ -122,6 +122,8 @@ for managing Transactions and Payments.
    ○ MongoDB Atlas connection string
    ○ Payment API credentials (API key, PG key)
    ○ JWT secret and expiry time
+
+
    ● README & Documentation
    Include a comprehensive README.md file with:
    ○ Setup and installation instructions
@@ -141,6 +143,8 @@ for managing Transactions and Payments.
    ○ Use HTTPS in production and set appropriate CORS policies.
    ● Robust Logging
    ○ Log incoming webhook events and failed transactions for audit and debugging.
+
+   
    Submission Guidelines
 1. Hosting
    o Host your project on a cloud platform (e.g., Heroku, AWS, or similar) to make it

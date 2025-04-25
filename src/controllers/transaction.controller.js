@@ -5,26 +5,21 @@ import ApiError from "../utils/ApiError.utils.js";
 import asyncHandler from "../utils/AsyncHandler.utils.js";
 import mongoose from "mongoose";
 
-// GET /transactions - Fetch all transactions with pagination, sorting, and filtering
 const getAllTransactions = asyncHandler(async (req, res) => {
   try {
-    // Extract query parameters for pagination, sorting, and filtering
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Handle sorting
     const sortField = req.query.sort || "createdAt";
     const sortOrder = req.query.order === "asc" ? 1 : -1;
     const sortOptions = {};
     sortOptions[sortField] = sortOrder;
 
-    // Handle filtering by status
     const statusFilter = req.query.status
       ? { "orderStatus.status": req.query.status }
       : {};
 
-    // Handle filtering by date range
     let dateFilter = {};
     if (req.query.startDate && req.query.endDate) {
       dateFilter = {
@@ -35,7 +30,6 @@ const getAllTransactions = asyncHandler(async (req, res) => {
       };
     }
 
-    // Combine all filters
     const filter = {
       ...statusFilter,
       ...dateFilter,
@@ -45,7 +39,7 @@ const getAllTransactions = asyncHandler(async (req, res) => {
     const transactions = await Order.aggregate([
       {
         $lookup: {
-          from: "orderstatuses", // The collection name is typically plural and lowercase
+          from: "orderstatuses", 
           localField: "_id",
           foreignField: "collect_id",
           as: "orderStatus",
@@ -86,7 +80,6 @@ const getAllTransactions = asyncHandler(async (req, res) => {
       },
     ]);
 
-    // Count total documents for pagination info
     const totalTransactions = await Order.countDocuments();
     const totalPages = Math.ceil(totalTransactions / limit);
 
@@ -115,7 +108,6 @@ const getAllTransactions = asyncHandler(async (req, res) => {
   }
 });
 
-// GET /transactions/school/:schoolId - Fetch transactions by school
 const getTransactionsBySchool = asyncHandler(async (req, res) => {
   try {
     const { schoolId } = req.params;
@@ -176,7 +168,6 @@ const getTransactionsBySchool = asyncHandler(async (req, res) => {
       },
     ]);
 
-    // Count total documents for this school for pagination info
     const totalTransactions = await Order.countDocuments({
       school_id: schoolId,
     });
@@ -221,15 +212,12 @@ const getTransactionsBySchool = asyncHandler(async (req, res) => {
   }
 });
 
-// GET /transaction-status/:custom_order_id - Check transaction status
 const getTransactionStatus = asyncHandler(async (req, res) => {
   try {
     const { custom_order_id } = req.params;
 
-    // Check if the provided ID is a valid MongoDB ObjectId
     const isValidObjectId = mongoose.Types.ObjectId.isValid(custom_order_id);
 
-    // Find the order by ID or custom_order_id
     let order;
     if (isValidObjectId) {
       order = await Order.findOne({
@@ -245,7 +233,6 @@ const getTransactionStatus = asyncHandler(async (req, res) => {
         .json(new ApiResponse(404, "Transaction not found", null));
     }
 
-    // Find the corresponding order status
     const orderStatus = await OrderStatus.findOne({ collect_id: order._id });
 
     if (!orderStatus) {
@@ -260,7 +247,6 @@ const getTransactionStatus = asyncHandler(async (req, res) => {
       );
     }
 
-    // Return the transaction status
     return res.status(200).json(
       new ApiResponse(200, "Transaction status fetched successfully", {
         order_id: order._id,

@@ -7,14 +7,12 @@ import asyncHandler from "../utils/AsyncHandler.utils.js";
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Check if token is in the Authorization header
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
   } else if (req.cookies?.token) {
-    // Or check if token is in cookies
     token = req.cookies.token;
   }
 
@@ -23,22 +21,18 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    // Check token expiration
     if (decoded.exp && decoded.exp < Date.now() / 1000) {
       return next(new ApiError(401, "Token has expired, please login again"));
     }
 
-    // Find user by id and exclude password
     const user = await User.findById(decoded.userId).select("-password");
 
     if (!user) {
       return next(new ApiError(401, "User not found or deactivated"));
     }
 
-    // Attach user to request object
     req.user = user;
     next();
   } catch (error) {
@@ -53,7 +47,7 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Restrict access based on user roles
+
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
