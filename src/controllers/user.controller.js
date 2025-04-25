@@ -8,12 +8,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
   try {
     const { username, email, password, role = "user" } = req.body;
 
-    // Validate required fields
     if (!username || !email || !password) {
       return next(new ApiError(400, "Please provide all required fields"));
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -24,7 +22,6 @@ const registerUser = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Create new user
     const newUser = new User({
       username,
       email,
