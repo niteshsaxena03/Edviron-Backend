@@ -5,7 +5,6 @@ import ApiError from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import asyncHandler from "../utils/AsyncHandler.utils.js";
 
-// Helper function to generate JWT signatures
 const generateSign = (payload) => {
   return jwt.sign(payload, process.env.pg_key, { algorithm: "HS256" });
 };

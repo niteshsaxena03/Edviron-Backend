@@ -2,50 +2,118 @@ import { User } from "../models/user.model.js";
 import { generateToken } from "../utils/jwt.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import ApiError from "../utils/ApiError.utils.js";
+import asyncHandler from "../utils/AsyncHandler.utils.js";
 
-const registerUser = async (req, res, next) => {
-  const { username, email, password } = req.body;
+const registerUser = asyncHandler(async (req, res, next) => {
+  try {
+    const { username, email, password, role = "user" } = req.body;
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return next(new ApiError(400, "User already exists"));
+    // Validate required fields
+    if (!username || !email || !password) {
+      return next(new ApiError(400, "Please provide all required fields"));
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    if (existingUser) {
+      return next(
+        new ApiError(400, "User with this email or username already exists")
+      );
+    }
+
+    // Create new user
+    const newUser = new User({
+      username,
+      email,
+      password,
+      role,
+    });
+
+    await newUser.save();
+
+    // Generate JWT token
+    const token = generateToken(newUser._id, newUser.role);
+
+    // Return success response with token
+    const response = new ApiResponse(201, "User registered successfully", {
+      user: {
+        _id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+      },
+      token,
+    });
+
+    res.status(201).json(response);
+  } catch (error) {
+    console.error("Registration error:", error);
+    next(new ApiError(500, "An error occurred during registration"));
   }
+});
 
-  const newUser = new User({
-    username,
-    email,
-    password,
-  });
+const loginUser = asyncHandler(async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-  await newUser.save();
+    // Validate required fields
+    if (!email || !password) {
+      return next(new ApiError(400, "Please provide email and password"));
+    }
 
-  const token = generateToken(newUser._id, newUser.role);
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new ApiError(401, "Invalid email or password"));
+    }
 
-  const response = new ApiResponse(201, "User registered successfully", {
-    token,
-  });
-  res.status(201).json(response);
-};
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return next(new ApiError(401, "Invalid email or password"));
+    }
 
-const loginUser = async (req, res, next) => {
-  const { email, password } = req.body;
+    // Generate JWT token
+    const token = generateToken(user._id, user.role);
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    return next(new ApiError(400, "Invalid email or password"));
+    // Return success response with token
+    const response = new ApiResponse(200, "User logged in successfully", {
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Login error:", error);
+    next(new ApiError(500, "An error occurred during login"));
   }
+});
 
-  const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
-    return next(new ApiError(400, "Invalid email or password"));
+const getUserProfile = asyncHandler(async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      return next(new ApiError(404, "User not found"));
+    }
+
+    const response = new ApiResponse(
+      200,
+      "User profile retrieved successfully",
+      { user }
+    );
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Profile retrieval error:", error);
+    next(new ApiError(500, "An error occurred while retrieving user profile"));
   }
+});
 
-  const token = generateToken(user._id, user.role);
-
-  const response = new ApiResponse(200, "User logged in successfully", {
-    token,
-  });
-  res.status(200).json(response);
-};
-
-export { loginUser, registerUser };
+export { loginUser, registerUser, getUserProfile };
