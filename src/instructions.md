@@ -103,12 +103,15 @@ for managing Transactions and Payments.
    Note: Populate dummy data in both schemas for testing.
    this API will return data by combining to schemas order and order status use mongodb
    pipeline to join these two schemas
+
 1. Fetch Transactions by School
    ● GET /transactions/school/:schoolId
    ● Returns all transactions related to a specific school.
+
 1. Check Transaction Status
    ● GET /transaction-status/:custom_order_id
    ● Returns the current status of the transaction.
+   
    ✅ Additional Notes
    ● Data Validation & Error Handling
    Ensure proper validation of all incoming data using validation libraries (e.g., class-validator for
