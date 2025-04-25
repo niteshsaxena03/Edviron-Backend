@@ -30,19 +30,16 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Find user by email
   const user = await User.findOne({ email });
   if (!user) {
     return next(new ApiError(400, "Invalid email or password"));
   }
 
-  // Compare password with hashed password
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     return next(new ApiError(400, "Invalid email or password"));
   }
 
-  // Generate JWT token
   const token = generateToken(user._id, user.role);
 
   const response = new ApiResponse(200, "User logged in successfully", {
