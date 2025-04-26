@@ -7,7 +7,6 @@ import { OrderStatus } from "../models/orderStatus.model.js";
 import { Webhook } from "../models/webhook.model.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import asyncHandler from "../utils/AsyncHandler.utils.js";
-import ApiError from "../utils/ApiError.utils.js";
 import mongoose from "mongoose";
 
 const createPayment = asyncHandler(async (req, res) => {
