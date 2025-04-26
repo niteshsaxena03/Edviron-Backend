@@ -1,345 +1,199 @@
-# School Payment and Dashboard API
+# School Payment Portal - Backend
 
-A microservice for a School Payment and Dashboard Application that manages Transactions and Payments.
+The backend API for the School Payment Portal application, built with Node.js, Express, and MongoDB.
 
-## Project Overview
+## Features
 
-This REST API provides a comprehensive solution for managing school payments, including:
+- **JWT Authentication**: Secure user registration and login
+- **Transaction Management**: CRUD operations for transactions
+- **Payment Gateway Integration**: Integration with payment processing API
+- **School-specific Transaction Views**: Filter transactions by school
+- **Transaction Status Checking**: Verify status of any transaction
+- **Webhook Integration**: Process payment callback notifications
 
-- Payment gateway integration with JWT-signed payloads
-- Webhook integration for real-time payment status updates
-- Transaction management and querying
-- User authentication and authorization
+## Project Structure
 
-## Tech Stack
+```
+backend/
+├── src/
+│   ├── controllers/       # Request handlers
+│   │   ├── payment.controller.js
+│   │   ├── transaction.controller.js
+│   │   └── user.controller.js
+│   ├── middlewares/       # Custom middleware
+│   │   └── auth.middleware.js
+│   ├── models/            # Mongoose schemas
+│   │   ├── order.model.js
+│   │   ├── orderStatus.model.js
+│   │   └── user.model.js
+│   ├── routes/            # API routes
+│   │   ├── payment.routes.js
+│   │   ├── transaction.routes.js
+│   │   └── user.routes.js
+│   ├── services/          # Business logic
+│   │   └── payment.service.js
+│   ├── utils/             # Utility functions
+│   │   ├── ApiError.utils.js
+│   │   ├── ApiResponse.utils.js
+│   │   └── AsyncHandler.utils.js
+│   ├── app.js             # Express app setup
+│   └── index.js           # Server entry point
+└── package.json           # Dependencies
+```
 
-- Node.js with Express.js
-- MongoDB Atlas for database
-- JWT for authentication
-- RESTful API architecture
-
-## Setup and Installation
-
-### Prerequisites
-
-- Node.js (v14 or later)
-- MongoDB Atlas account
-- npm or yarn
-- Postman (for testing)
-
-### Installation Steps
-
-1. Clone the repository:
-
-   ```
-   git clone <repository-url>
-   ```
-
-2. Install dependencies:
-
-   ```
-   cd backend
-   npm install
-   ```
-
-3. Set up environment variables:
-   Create a `.env` file in the `src` directory with the following variables:
-
-   ```
-   PORT=8000
-   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
-   CORS_ORIGIN=*
-   JWT_SECRET=your_jwt_secret
-   JWT_EXPIRES_IN=1d
-   PG_KEY=edvtest01
-   PG_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0cnVzdGVlSWQiOiI2NWIwZTU1MmRkMzE5NTBhOWI0MWM1YmEiLCJJbmRleE9mQXBpS2V5Ijo2LCJpYXQiOjE3MTE2MjIyNzAsImV4cCI6MTc0MzE3OTg3MH0.Rye77Dp59GGxwCmwWekJHRj6edXWJnff9finjMhxKuw
-   SCHOOL_ID=65b0e6293e9f76a9694d84b4
-   ```
-
-4. Start the server:
-   ```
-   npm run dev
-   ```
-
-## API Usage
+## API Endpoints
 
 ### Authentication
 
-#### Register a new user
+- `POST /api/users/register` - Register a new user
 
-```
-POST /api/users/register
-Content-Type: application/json
+  - Request: `{ name, email, password }`
+  - Response: `{ success, message, data: { user, token } }`
 
-{
-  "name": "User Name",
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
+- `POST /api/users/login` - Login and get JWT token
+  - Request: `{ email, password }`
+  - Response: `{ success, message, data: { user, token } }`
 
-#### Login
+### Transactions
 
-```
-POST /api/users/login
-Content-Type: application/json
+- `GET /api/transactions` - Get all transactions
 
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
+  - Query Parameters:
+    - `page`: Page number (default: 1)
+    - `limit`: Results per page (default: 10)
+    - `sort`: Field to sort by (default: createdAt)
+    - `order`: Sort order (asc/desc, default: desc)
+    - `status`: Filter by status
+    - `startDate`: Filter by start date
+    - `endDate`: Filter by end date
+  - Response: `{ success, message, data: { transactions, pagination } }`
 
-Response:
+- `GET /api/transactions/school/:schoolId` - Get transactions for a specific school
 
-```json
-{
-  "message": "Login successful",
-  "success": true,
-  "data": {
-    "user": {
-      "_id": "user_id",
-      "name": "User Name",
-      "email": "user@example.com"
-    },
-    "token": "JWT_TOKEN"
-  },
-  "statusCode": 200
-}
-```
+  - Query Parameters: Same as /transactions
+  - Response: `{ success, message, data: { transactions, pagination } }`
 
-### Payment Integration
+- `GET /api/transaction-status/:custom_order_id` - Check status of a transaction
+  - Response: `{ success, message, data: { order_id, status, ... } }`
 
-#### Create Payment
+### Payment Gateway
 
-```
-POST /api/payment/create-payment
-Content-Type: application/json
-Authorization: Bearer JWT_TOKEN
+- `POST /api/payment/create-payment` - Create a new payment request
+  - Request: `{ schoolId, studentInfo, amount, ... }`
+  - Response: `{ success, message, data: { redirectUrl, orderId, ... } }`
 
-{
-  "school_id": "65b0e6293e9f76a9694d84b4",
-  "amount": 5000,
-  "callback_url": "https://example.com/callback",
-  "student_info": {
-    "name": "Test Student",
-    "id": "STD12345",
-    "email": "student@example.com"
-  }
-}
-```
+### Webhook
 
-Response:
+- `POST /api/webhook` - Receive payment status updates
+  - Request: `{ status, order_info: { ... } }`
+  - Response: `{ success, message }`
 
-```json
-{
-  "message": "Payment request created successfully",
-  "success": true,
-  "data": {
-    "collect_request_id": "transaction_id",
-    "collect_request_url": "payment_gateway_url"
-  },
-  "statusCode": 200
-}
-```
-
-#### Payment Callback (Webhook)
-
-```
-POST /api/payment/payment-callback
-Content-Type: application/json
-
-{
-  "status": 200,
-  "order_info": {
-    "order_id": "transaction_id",
-    "order_amount": 5000,
-    "transaction_amount": 5000,
-    "gateway": "Edviron",
-    "bank_reference": "REFXYZ123",
-    "status": "SUCCESS",
-    "payment_mode": "UPI",
-    "payment_details": "UPI transaction",
-    "Payment_message": "payment success",
-    "payment_time": "2025-04-23T08:14:21.945+00:00",
-    "error_message": "NA"
-  }
-}
-```
-
-### Transaction Management
-
-#### Get All Transactions
-
-```
-GET /api/transactions?page=1&limit=10&sort=payment_time&order=desc
-Authorization: Bearer JWT_TOKEN
-```
-
-Query Parameters:
-
-- `page`: Page number (default: 1)
-- `limit`: Items per page (default: 10)
-- `sort`: Field to sort by (e.g., payment_time, status)
-- `order`: Sort order (asc, desc)
-- `status`: Filter by status (e.g., SUCCESS, PENDING, FAILED)
-- `startDate`: Filter by start date (ISO format)
-- `endDate`: Filter by end date (ISO format)
-
-Response:
-
-```json
-{
-  "message": "Transactions fetched successfully",
-  "success": true,
-  "data": {
-    "transactions": [
-      {
-        "collect_id": "transaction_id",
-        "school_id": "school_id",
-        "gateway": "Edviron",
-        "order_amount": 5000,
-        "transaction_amount": 5000,
-        "status": "SUCCESS",
-        "custom_order_id": "transaction_id",
-        "payment_time": "2025-04-23T08:14:21.945+00:00",
-        "payment_mode": "UPI",
-        "payment_details": "UPI transaction",
-        "student_info": {
-          "name": "Test Student",
-          "id": "STD12345",
-          "email": "student@example.com"
-        }
-      }
-    ],
-    "pagination": {
-      "total": 1,
-      "page": 1,
-      "limit": 10,
-      "totalPages": 1
-    }
-  },
-  "statusCode": 200
-}
-```
-
-#### Get Transactions by School
-
-```
-GET /api/transactions/school/{schoolId}?page=1&limit=10&sort=payment_time&order=desc
-Authorization: Bearer JWT_TOKEN
-```
-
-#### Check Transaction Status
-
-```
-GET /api/transactions/status/{custom_order_id}
-Authorization: Bearer JWT_TOKEN
-```
-
-Response:
-
-```json
-{
-  "message": "Transaction status fetched successfully",
-  "success": true,
-  "data": {
-    "order_id": "transaction_id",
-    "custom_order_id": "transaction_id",
-    "status": "SUCCESS",
-    "order_amount": 5000,
-    "transaction_amount": 5000,
-    "payment_mode": "UPI",
-    "payment_details": "UPI transaction",
-    "payment_time": "2025-04-23T08:14:21.945+00:00",
-    "gateway": "Edviron",
-    "school_id": "school_id",
-    "student_info": {
-      "name": "Test Student",
-      "id": "STD12345",
-      "email": "student@example.com"
-    }
-  },
-  "statusCode": 200
-}
-```
-
-## Database Schema
+## Database Models
 
 ### Order Schema
 
-- `_id`: ObjectId
-- `school_id`: String
-- `trustee_id`: String
-- `student_info`: Object
-  - `name`: String
-  - `id`: String
-  - `email`: String
-- `gateway_name`: String
+```javascript
+{
+  school_id: ObjectId,
+  trustee_id: ObjectId,
+  student_info: {
+    name: String,
+    id: String,
+    email: String
+  },
+  gateway_name: String
+}
+```
 
 ### Order Status Schema
 
-- `collect_id`: ObjectId (Reference to Order schema)
-- `order_amount`: Number
-- `transaction_amount`: Number
-- `payment_mode`: String
-- `payment_details`: String
-- `bank_reference`: String
-- `payment_message`: String
-- `status`: String
-- `error_message`: String
-- `payment_time`: Date
+```javascript
+{
+  collect_id: ObjectId,      // Reference to Order schema
+  order_amount: Number,
+  transaction_amount: Number,
+  payment_mode: String,
+  payment_details: String,
+  bank_reference: String,
+  payment_message: String,
+  status: String,
+  error_message: String,
+  payment_time: Date
+}
+```
 
 ### User Schema
 
-- `name`: String
-- `email`: String
-- `password`: String (hashed)
-- `role`: String
+```javascript
+{
+  name: String,
+  email: String,
+  password: String,
+  role: String
+}
+```
 
-### Webhook Logs Schema
+## Getting Started
 
-- `collect_id`: ObjectId (Reference to Order schema)
-- `payload`: Object (Raw webhook payload)
-- `created_at`: Date
-- `status`: String
-- `error`: String
+### Prerequisites
 
-## Testing with Postman
+- Node.js (v14.x or later)
+- MongoDB Atlas account
 
-1. Register a new user or login to get a JWT token
-2. Include the token in the Authorization header for all API requests
-3. Use the transaction endpoints to fetch data
-4. Test the payment flow:
-   - Create a payment
-   - Use the payment gateway URL to simulate payment
-   - Test the webhook endpoint to simulate a callback
-   - Verify the transaction status
+### Installation
 
-## Performance and Security
+1. Install dependencies:
 
-- All endpoints are secured with JWT authentication
-- Role-based access control for sensitive operations
-- Pagination for list endpoints to handle large datasets
-- Sorting and filtering capabilities for efficient data retrieval
-- MongoDB indexes on frequently queried fields (school_id, custom_order_id, collect_id)
-- Proper error handling and validation for all API requests
-- CORS configured for secure cross-origin requests
-- Environment variables for sensitive configuration
+```bash
+npm install
+```
 
-## Deployment
+2. Create a `.env` file in the project root with:
 
-The project can be deployed on:
+```
+PORT=8000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET_KEY=your_jwt_secret
+JWT_EXPIRES_IN=90d
+PG_KEY=edvtest01
+API_KEY=your_payment_api_key
+```
 
-- Heroku
-- AWS
-- Google Cloud
-- Any Node.js compatible hosting service
+### Development
 
-## Future Enhancements
+Run the development server with hot reload:
 
-- Additional filtering options for transactions
-- Advanced analytics and reporting
-- Batch processing for bulk payments
-- Email notifications for payment status
-- API rate limiting for security
+```bash
+npm run dev
+```
+
+### Production
+
+Start the server in production mode:
+
+```bash
+npm start
+```
+
+## Error Handling
+
+The API uses a consistent error handling approach:
+
+- `ApiError` class for generating error responses
+- `ApiResponse` class for generating success responses
+- `AsyncHandler` utility for handling async route handler errors
+
+## Authentication Flow
+
+1. User registers or logs in to receive a JWT token
+2. Token is included in the Authorization header of subsequent requests
+3. Auth middleware validates the token and attaches user info to the request
+4. Protected routes check for valid authentication before processing
+
+## Payment Integration Flow
+
+1. Frontend submits payment details to `/api/payment/create-payment`
+2. Backend forwards the request to the payment gateway with required JWT-signed payloads
+3. Payment gateway responds with a redirect URL for the user
+4. After payment completion, the payment gateway sends a webhook notification
+5. Backend processes the webhook and updates the transaction status
