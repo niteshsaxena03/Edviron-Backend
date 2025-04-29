@@ -1,5 +1,7 @@
 # School Payment Portal - Backend
 
+> **Note for First-Time Users**: Due to the free tier hosting on Render, the server may take up to 5 minutes to respond on the first request. This is a normal behavior as the server needs to "wake up" from sleep mode. Subsequent requests will be much faster. Thank you for your patience!
+
 The backend API for the School Payment Portal application, built with Node.js, Express, and MongoDB.
 
 ## Features
